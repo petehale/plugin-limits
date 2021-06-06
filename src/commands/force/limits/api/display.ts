@@ -34,14 +34,12 @@ export class LimitsApiDisplayCommand extends SfdxCommand {
       const conn = this.org.getConnection();
       const geturl = `${conn.instanceUrl}/services/data/v${conn.version}/limits`;
       const result = (await conn.request(geturl)) as Result;
-      const limits: ApiLimit[] = [];
-
-      Object.keys(result).map((limitName) => {
-        limits.push({
+      const limits = Object.keys(result).map((limitName) => {
+        return {
           name: limitName,
           max: result[limitName].Max,
           remaining: result[limitName].Remaining,
-        });
+        };
       });
 
       this.ux.table(limits, {

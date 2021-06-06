@@ -48,19 +48,17 @@ export class LimitsRecordCountsDisplayCommand extends SfdxCommand {
 
   public async run(): Promise<RecordCount[]> {
     try {
-      const sobjecttypeString = (this.flags.sobjecttype as string[]).join();
+      const sobjectSet = new Set(...(this.flags.sobjecttype as string[]));
       const conn = this.org.getConnection();
-      const geturl = `${conn.baseUrl()}/limits/recordCount?sObjects=${sobjecttypeString}`;
+      const geturl = `${conn.baseUrl()}/limits/recordCount?sObjects=${[...sobjectSet.values()].join())}`;
       const result = (await conn.request(geturl)) as unknown as Result;
 
       // if an object is requested, but there's 0 of them on the server, append that object to the result
-      sobjecttypeString.split(',').forEach((name) => {
-        if (!result.sObjects.find((record) => record.name === name)) {
-          result.sObjects.push({ name, count: 0 });
-        }
-      });
-
-      return result.sObjects;
+      const zeroCountSobjects = [...sobjectSet.values()]
+        .filter(name => !result.sObjects.find((record) => record.name === name))
+        .map(name => ({ name, count: 0 }));
+ 
+      return [...result.sObjects, ...zeroCountSobjects];
     } catch (err) {
       throw SfdxError.wrap(err);
     }
